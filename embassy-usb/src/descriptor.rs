@@ -82,8 +82,12 @@ impl<'a> DescriptorWriter<'a> {
     pub fn write(&mut self, descriptor_type: u8, descriptor: &[u8]) {
         let length = descriptor.len();
 
-        if (self.position + 2 + length) > self.buf.len() || (length + 2) > 255 {
-            panic!("Descriptor buffer full");
+        if (length + 2) > 255 {
+            panic!("Descriptor too large: {}", length + 2)
+        }
+
+        if (self.position + 2 + length) > self.buf.len() {
+            panic!("Descriptor buffer full: buf.len={} length={}", self.buf.len(), length + 2);
         }
 
         self.buf[self.position] = (length + 2) as u8;
