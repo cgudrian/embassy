@@ -1,7 +1,7 @@
 use crate::builder::Config;
+use crate::CONFIGURATION_VALUE;
 use crate::driver::EndpointInfo;
 use crate::types::*;
-use crate::CONFIGURATION_VALUE;
 
 /// Standard descriptor types
 #[allow(missing_docs)]
@@ -32,6 +32,23 @@ pub mod capability_type {
     pub const SS_USB_DEVICE: u8 = 3;
     pub const CONTAINER_ID: u8 = 4;
     pub const PLATFORM: u8 = 5;
+}
+
+pub enum EndpointExtra {
+    None,
+    Audio {
+        refresh: u8,
+        synch_address: u8,
+    },
+}
+
+impl EndpointExtra {
+    pub fn audio(refresh: u8, synch_address: u8) -> EndpointExtra {
+        Self::Audio {
+            refresh,
+            synch_address,
+        }
+    }
 }
 
 /// A writer for USB descriptors.
@@ -223,22 +240,41 @@ impl<'a> DescriptorWriter<'a> {
     ///
     /// * `endpoint` - Endpoint previously allocated with
     ///   [`UsbDeviceBuilder`](crate::bus::UsbDeviceBuilder).
-    pub fn endpoint(&mut self, endpoint: &EndpointInfo) {
+    pub fn endpoint(&mut self, endpoint: &EndpointInfo, extra: EndpointExtra) {
         match self.num_endpoints_mark {
             Some(mark) => self.buf[mark] += 1,
             None => panic!("you can only call `endpoint` after `interface/interface_alt`."),
         };
 
-        self.write(
-            descriptor_type::ENDPOINT,
-            &[
-                endpoint.addr.into(),   // bEndpointAddress
-                endpoint.ep_type as u8, // bmAttributes
-                endpoint.max_packet_size as u8,
-                (endpoint.max_packet_size >> 8) as u8, // wMaxPacketSize
-                endpoint.interval,                     // bInterval
-            ],
-        );
+        match extra {
+            EndpointExtra::None => {
+                self.write(
+                    descriptor_type::ENDPOINT,
+                    &[
+                        endpoint.addr.into(),   // bEndpointAddress
+                        endpoint.ep_type as u8, // bmAttributes
+                        endpoint.max_packet_size as u8,
+                        (endpoint.max_packet_size >> 8) as u8, // wMaxPacketSize
+                        endpoint.interval,                     // bInterval
+                    ],
+                );
+            }
+
+            EndpointExtra::Audio { refresh, synch_address } => {
+                self.write(
+                    descriptor_type::ENDPOINT,
+                    &[
+                        endpoint.addr.into(),   // bEndpointAddress
+                        endpoint.ep_type as u8, // bmAttributes
+                        endpoint.max_packet_size as u8,
+                        (endpoint.max_packet_size >> 8) as u8, // wMaxPacketSize
+                        endpoint.interval,                     // bInterval
+                        refresh,
+                        synch_address,
+                    ],
+                );
+            }
+        };
     }
 
     /// Writes a string descriptor.

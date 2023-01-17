@@ -20,6 +20,7 @@ use crate::control::{self, ControlHandler, InResponse, OutResponse, Request};
 use crate::driver::{Driver, Endpoint, EndpointError, EndpointIn, EndpointOut};
 use crate::types::*;
 use crate::Builder;
+use crate::descriptor::EndpointExtra;
 
 pub mod embassy_net;
 
@@ -298,7 +299,7 @@ impl<'d, D: Driver<'d>> CdcNcmClass<'d, D> {
             ],
         );
 
-        let comm_ep = alt.endpoint_interrupt_in(8, 255);
+        let comm_ep = alt.endpoint_interrupt_in(8, 255, EndpointExtra::None);
 
         // Data interface
         let mut iface = func.interface();
@@ -306,8 +307,8 @@ impl<'d, D: Driver<'d>> CdcNcmClass<'d, D> {
         let data_if = iface.interface_number();
         let _alt = iface.alt_setting(USB_CLASS_CDC_DATA, 0x00, CDC_PROTOCOL_NTB);
         let mut alt = iface.alt_setting(USB_CLASS_CDC_DATA, 0x00, CDC_PROTOCOL_NTB);
-        let read_ep = alt.endpoint_bulk_out(max_packet_size);
-        let write_ep = alt.endpoint_bulk_in(max_packet_size);
+        let read_ep = alt.endpoint_bulk_out(max_packet_size, EndpointExtra::None);
+        let write_ep = alt.endpoint_bulk_in(max_packet_size, EndpointExtra::None);
 
         CdcNcmClass {
             _comm_if: comm_if,

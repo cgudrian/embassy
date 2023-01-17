@@ -8,6 +8,7 @@ use crate::control::{self, ControlHandler, InResponse, OutResponse, Request};
 use crate::driver::{Driver, Endpoint, EndpointError, EndpointIn, EndpointOut};
 use crate::types::*;
 use crate::Builder;
+use crate::descriptor::EndpointExtra;
 
 /// This should be used as `device_class` when building the `UsbDevice`.
 pub const USB_CLASS_CDC: u8 = 0x02;
@@ -200,14 +201,14 @@ impl<'d, D: Driver<'d>> CdcAcmClass<'d, D> {
             ],
         );
 
-        let comm_ep = alt.endpoint_interrupt_in(8, 255);
+        let comm_ep = alt.endpoint_interrupt_in(8, 255, EndpointExtra::None);
 
         // Data interface
         let mut iface = func.interface();
         let data_if = iface.interface_number();
         let mut alt = iface.alt_setting(USB_CLASS_CDC_DATA, 0x00, CDC_PROTOCOL_NONE);
-        let read_ep = alt.endpoint_bulk_out(max_packet_size);
-        let write_ep = alt.endpoint_bulk_in(max_packet_size);
+        let read_ep = alt.endpoint_bulk_out(max_packet_size, EndpointExtra::None);
+        let write_ep = alt.endpoint_bulk_in(max_packet_size, EndpointExtra::None);
 
         CdcAcmClass {
             _comm_ep: comm_ep,

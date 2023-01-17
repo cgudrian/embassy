@@ -10,6 +10,7 @@ use usbd_hid::descriptor::AsInputReport;
 use crate::control::{ControlHandler, InResponse, OutResponse, Request, RequestType};
 use crate::driver::{Driver, Endpoint, EndpointError, EndpointIn, EndpointOut};
 use crate::Builder;
+use crate::descriptor::EndpointExtra;
 
 const USB_CLASS_HID: u8 = 0x03;
 const USB_SUBCLASS_NONE: u8 = 0x00;
@@ -122,9 +123,9 @@ fn build<'d, D: Driver<'d>>(
         ],
     );
 
-    let ep_in = alt.endpoint_interrupt_in(config.max_packet_size, config.poll_ms);
+    let ep_in = alt.endpoint_interrupt_in(config.max_packet_size, config.poll_ms, EndpointExtra::None);
     let ep_out = if with_out_endpoint {
-        Some(alt.endpoint_interrupt_out(config.max_packet_size, config.poll_ms))
+        Some(alt.endpoint_interrupt_out(config.max_packet_size, config.poll_ms, EndpointExtra::None))
     } else {
         None
     };
