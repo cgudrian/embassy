@@ -125,11 +125,13 @@ pub(crate) unsafe fn init(config: Config) {
 
     if config.pll48 {
         let freq = unwrap!(plls.pll48clk);
+        info!("pll48clk={}", freq);
 
         assert!((max::PLL_48_CLK as i32 - freq as i32).abs() <= max::PLL_48_TOLERANCE as i32);
     }
 
     let sysclk = if sysclk_on_pll { unwrap!(plls.pllsysclk) } else { sysclk };
+    info!("sysclk={}", sysclk);
 
     // AHB prescaler
     let hclk = config.hclk.map(|h| h.0).unwrap_or(sysclk);
