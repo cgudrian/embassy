@@ -1,3 +1,4 @@
+use heapless::Vec;
 use crate::builder::Config;
 use crate::CONFIGURATION_VALUE;
 use crate::driver::EndpointInfo;
@@ -250,35 +251,27 @@ impl<'a> DescriptorWriter<'a> {
             None => panic!("you can only call `endpoint` after `interface/interface_alt`."),
         };
 
-        match extra {
-            EndpointExtra::None => {
-                self.write(
-                    descriptor_type::ENDPOINT,
-                    &[
-                        endpoint.addr.into(),   // bEndpointAddress
-                        endpoint.ep_type as u8, // bmAttributes
-                        endpoint.max_packet_size as u8,
-                        (endpoint.max_packet_size >> 8) as u8, // wMaxPacketSize
-                        endpoint.interval,                     // bInterval
-                    ],
-                );
-            }
+        let mut descriptor: Vec<u8, 7> = Vec::from_slice(&[
+            endpoint.addr.into(),   // bEndpointAddress
+            endpoint.ep_type as u8, // bmAttributes
+            endpoint.max_packet_size as u8,
+            (endpoint.max_packet_size >> 8) as u8, // wMaxPacketSize
+            endpoint.interval,                     // bInterval
+        ]).unwrap();
 
+        // augment the descriptor with additional data
+        match extra {
+            EndpointExtra::None => (),
             EndpointExtra::Audio { refresh, synch_address } => {
-                self.write(
-                    descriptor_type::ENDPOINT,
-                    &[
-                        endpoint.addr.into(),   // bEndpointAddress
-                        endpoint.ep_type as u8, // bmAttributes
-                        endpoint.max_packet_size as u8,
-                        (endpoint.max_packet_size >> 8) as u8, // wMaxPacketSize
-                        endpoint.interval,                     // bInterval
-                        refresh,
-                        synch_address,
-                    ],
-                );
+                descriptor.push(refresh).unwrap();
+                descriptor.push(synch_address).unwrap();
             }
         };
+
+        self.write(
+            descriptor_type::ENDPOINT,
+            descriptor.as_slice(),
+        )
     }
 
     /// Writes a string descriptor.
